@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MERCHANT
+  CUSTOMER
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum RuleType {
+  TIME_RANGE
+  DEMAND
+  LEAD_TIME
+  DATE_SPECIFIC
+}
+
+enum AdjustmentType {
+  PERCENTAGE
+  FIXED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password_hash String
+  role          Role      @default(CUSTOMER)
+  created_at    DateTime  @default(now())
+  merchants     Merchant[]
+  bookings      Booking[]
+}
+
+model Merchant {
+  id                    String    @id @default(cuid())
+  owner_user_id         String
+  owner                 User      @relation(fields: [owner_user_id], references: [id])
+  name                  String
+  commission_percentage Decimal   @db.Decimal(5, 2)
+  is_active             Boolean   @default(true)
+  created_at            DateTime  @default(now())
+  services              Service[]
+  bookings              Booking[]
+}
+
+model Service {
+  id                      String        @id @default(cuid())
+  merchant_id             String
+  merchant                Merchant      @relation(fields: [merchant_id], references: [id])
+  name                    String
+  description             String?
+  duration_minutes        Int
+  base_price              Decimal       @db.Decimal(12, 2)
+  dynamic_pricing_enabled Boolean       @default(false)
+  created_at              DateTime      @default(now())
+  timeslots               Timeslot[]
+  pricing_rules           PricingRule[]
+  bookings                Booking[]
+}
+
+model Timeslot {
+  id           String    @id @default(cuid())
+  service_id   String
+  service      Service   @relation(fields: [service_id], references: [id])
+  start_time   DateTime
+  end_time     DateTime
+  capacity     Int
+  booked_count Int       @default(0)
+  created_at   DateTime  @default(now())
+  bookings     Booking[]
+}
+
+model PricingRule {
+  id              String         @id @default(cuid())
+  service_id      String
+  service         Service        @relation(fields: [service_id], references: [id])
+  rule_type       RuleType
+  adjustment_type AdjustmentType
+  value           Decimal        @db.Decimal(10, 2)
+  priority        Int            @default(0)
+  stackable       Boolean        @default(true)
+  is_active       Boolean        @default(true)
+  conditions      Json
+  created_at      DateTime       @default(now())
+}
+
+model Booking {
+  id                             String        @id @default(cuid())
+  service_id                     String
+  service                        Service       @relation(fields: [service_id], references: [id])
+  merchant_id                    String
+  merchant                       Merchant      @relation(fields: [merchant_id], references: [id])
+  customer_id                    String
+  customer                       User          @relation(fields: [customer_id], references: [id])
+  timeslot_id                    String
+  timeslot                       Timeslot      @relation(fields: [timeslot_id], references: [id])
+  base_price_snapshot            Decimal       @db.Decimal(12, 2)
+  final_price_snapshot           Decimal       @db.Decimal(12, 2)
+  commission_percentage_snapshot Decimal       @db.Decimal(5, 2)
+  platform_fee_snapshot          Decimal       @db.Decimal(12, 2)
+  merchant_earning_snapshot      Decimal       @db.Decimal(12, 2)
+  status                         BookingStatus @default(CONFIRMED)
+  created_at                     DateTime      @default(now())
+}
