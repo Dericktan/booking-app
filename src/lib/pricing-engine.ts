@@ -1,3 +1,7 @@
+// Prices are stored and displayed in the smallest local currency unit (e.g. IDR),
+// so final prices are rounded to the nearest PRICE_ROUNDING_UNIT.
+const PRICE_ROUNDING_UNIT = 1000;
+
 export type RuleType = 'TIME_RANGE' | 'DEMAND' | 'LEAD_TIME' | 'DATE_SPECIFIC';
 export type AdjustmentType = 'PERCENTAGE' | 'FIXED';
 
@@ -157,8 +161,8 @@ export function computePrice(
     }
   }
 
-  // Round to nearest 1000
-  const final_price = Math.round(price / 1000) * 1000;
+  // Round to nearest PRICE_ROUNDING_UNIT
+  const final_price = Math.round(price / PRICE_ROUNDING_UNIT) * PRICE_ROUNDING_UNIT;
 
   return { final_price, applied_rules: appliedRules };
 }

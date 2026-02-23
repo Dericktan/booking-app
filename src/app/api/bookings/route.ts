@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   const context = {
     start_time: timeslot.start_time,
     end_time: timeslot.end_time,
-    capacity: timeslot.booked_count + 1, // use post-booking occupancy for demand calc
+    capacity: timeslot.capacity,
     booked_count: timeslot.booked_count,
   };
 
